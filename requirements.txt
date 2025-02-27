@@ -8,7 +8,7 @@ marshmallow==2.21.0
 packaging==24.2
 peewee==3.17.9
 pefile==2019.4.18
-PyInstaller==3.4
+PyInstaller==6.10.0
 pyodbc==4.0.30
 pypiwin32==219
 pywin32-ctypes==0.2.0
