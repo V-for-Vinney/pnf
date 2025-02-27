@@ -1,0 +1,2 @@
+PyPNF.exe install
+pause
