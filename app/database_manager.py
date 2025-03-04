@@ -52,26 +52,34 @@ class DatabaseManager:
         self.conn.close()
 
     def is_local_data_consistent(self, table_name: str, server_response: ServerResponse):
+        self.establish_connection()
         if table_name == Tables.suitcase.value:
             # в оригинальном коде nullable только поле "ID_Totale"
-            if server_response.data.polycomm_id is None and server_response.data.partial_id is None:
+            if (
+                    (server_response.Data.Polycommid is None and server_response.Data.Partialid is None)
+                    or server_response.Data.Polycommid == 0
+            ):
                 return True
             result = self.suitcase.select().where(
-                (self.suitcase.id == server_response.data.polycomm_id) &
-                (self.suitcase.id_totale == server_response.data.total_id) &
-                (self.suitcase.id_parziale == server_response.data.partial_id)
+                (self.suitcase.ID == server_response.Data.Polycommid) &
+                (self.suitcase.ID_Totale == server_response.Data.Totalid) &
+                (self.suitcase.ID_Parziale == server_response.Data.Partialid)
             ).count()
         elif table_name == Tables.allarmi.value:
-            result = self.allarmi.select().where(self.allarmi.id == server_response.data.polycomm_id).count()
+            if server_response.Data.Polycommid is None or server_response.Data.Polycommid == 0:
+                return True
+            result = self.allarmi.select().where(self.allarmi.ID == server_response.Data.Polycommid).count()
         else:
+            self.close_connection()
             raise ValueError("Incorrect table name")
+        self.close_connection()
         return result != 0
 
     def get_data_delta(self, table_name: str, server_response: ServerResponse):
         if table_name == Tables.suitcase.value:
-            query = self.suitcase.select().where(self.suitcase.id > server_response.data.polycomm_id)
+            query = self.suitcase.select().where(self.suitcase.ID > server_response.Data.Polycommid)
         elif table_name == Tables.allarmi.value:
-            query = self.allarmi.select().where(self.allarmi.id > server_response.data.polycomm_id)
+            query = self.allarmi.select().where(self.allarmi.ID > server_response.Data.Polycommid)
         else:
             raise ValueError("Incorrect table name")
         return query

@@ -1,6 +1,7 @@
 import time
 import warnings
 
+from peewee import ModelSelect
 from typing import Union
 
 with warnings.catch_warnings():
@@ -51,6 +52,7 @@ class CommunicationManager:
         self.unit_generation = unit_generation
         self.chunk_size = chunk_size
         self.chunk_send_timeout = chunk_send_timeout  # seconds
+        self.logger = logger
 
     def send_state(self, state: ServiceState) -> bool:
         url = self.endpoints.service_state_request_url(self.machine_id, state=state)
@@ -62,27 +64,27 @@ class CommunicationManager:
         response = requests.get(url)
         json = response.json()
         server_response_data = self.schemas.server_response.load(json)
-        return server_response_data.data["data"]["status"]
+        return server_response_data.data["Data"]["Status"]
 
     def get_db_passwd(self) -> str:
         url = self.endpoints.db_request_url(self.machine_id)
         response = requests.get(url)
         json = response.json()
         server_response_data = self.schemas.server_response.load(json)
-        return server_response_data.data["data"]["db_pass"]
+        return server_response_data.data["Data"]["DbPass"]
 
     def get_db_table_info(self, table: Tables) -> Union[ServerResponse, None]:
         url = self.endpoints.db_request_url(self.machine_id, table)
         response = requests.get(url)
         if not 200 <= response.status_code <= 299:
-            logger.error("URL: {0}, ответ: {1} [{2}]".format(url, response.text, response.status_code))
+            self.logger.error("URL: {0}, ответ: {1} [{2}]".format(url, response.text, response.status_code))
             return
         json = response.json()
         server_response_dict = self.schemas.server_response.load(json).data
         server_response = ServerResponse(
-            response_code=server_response_dict["response_code"],
-            response_msg=server_response_dict["response_msg"],
-            data=ServerResponseData(**server_response_dict["data"]),
+            ResponseCode=server_response_dict["ResponseCode"],
+            ResponseMessage=server_response_dict["ResponseMessage"],
+            Data=ServerResponseData(**server_response_dict["Data"]),
         )
         return server_response
 
@@ -90,7 +92,7 @@ class CommunicationManager:
         for i in range(0, len(lst), self.chunk_size):
             yield lst[i:i + self.chunk_size]
 
-    def send_table_data(self, table_type: Tables, table_data: list):
+    def send_table_data(self, table_type: Tables, table_data: ModelSelect):
         url = self.endpoints.base_url
         schema = self.schemas.allarmi if table_type == Tables.allarmi else self.schemas.suitcase
         for data_chunk in self._chunkify(table_data):
@@ -98,8 +100,8 @@ class CommunicationManager:
             payload_json = schema.dumps(payload_data)
             response = requests.post(url, json=payload_json.data)
             if not 200 <= response.status_code <= 299:
-                chunk_ids = ",".join(str(entry.id) for entry in data_chunk)
+                chunk_ids = ",".join(str(entry.ID) for entry in data_chunk)
                 msg = "Проблема при отправке данных '{0}' (ID: [{1}]). Ответ: {2}" \
                     .format(table_type.value.upper(), chunk_ids, response.text)
-                logger.error(msg)
+                self.logger.error(msg)
             time.sleep(self.chunk_send_timeout)

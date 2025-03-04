@@ -7,48 +7,28 @@ from .client_row_data_suitcase import SuitcasePolycommRowDataRowDataSchema
 
 
 class _BaseTableDataSchema(Schema):
-    machine_id = fields.Integer(required=True, load_from='machine_id', dump_to='machineId')
-    data_type = fields.String(required=True, load_from='data_type', dump_to='dataType')
+    machineId = fields.Integer(required=True)
+    dataType = fields.String(required=True)
 
 
 class AllarmiPolycommTableDataSchema(_BaseTableDataSchema):
-    records = fields.List(
-        fields.Nested(AllarmiPolycommRowDataSchema),
-        required=True,
-        load_from='records',
-        dump_to='records'
-    )
+    records = fields.List(fields.Nested(AllarmiPolycommRowDataSchema), required=True)
 
 
 class AllarmiPackflyTableDataSchema(_BaseTableDataSchema):
-    records = fields.List(
-        fields.Nested(AllarmiPackflyRowDataSchema),
-        required=True,
-        load_from='records',
-        dump_to='records'
-    )
+    records = fields.List(fields.Nested(AllarmiPackflyRowDataSchema), required=True)
 
 
 class SuitcasePolycommTableDataSchema(_BaseTableDataSchema):
-    records = fields.List(fields.Nested(
-        SuitcasePolycommRowDataRowDataSchema),
-        required=True,
-        load_from='records',
-        dump_to='records'
-    )
+    records = fields.List(fields.Nested(SuitcasePolycommRowDataRowDataSchema), required=True)
 
 
 class SuitcasePackflyTableDataSchema(_BaseTableDataSchema):
-    records = fields.List(
-        fields.Nested(SuitcasePackflyRowDataRowDataSchema),
-        required=True,
-        load_from='records',
-        dump_to='records'
-    )
+    records = fields.List(fields.Nested(SuitcasePackflyRowDataRowDataSchema), required=True)
 
 
 class TableData:
     def __init__(self, machine_id: int, data_type: str, records: list):
-        self.machine_id = machine_id
-        self.data_type = data_type
+        self.machineId = machine_id
+        self.dataType = data_type
         self.records = records
